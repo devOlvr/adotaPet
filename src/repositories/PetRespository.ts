@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { NamingStrategyInterface, Repository } from "typeorm";
 import PetEntity from "../entities/PetEntity";
 import InterfacePetRepository from "./interfaces/InterfacePetRepository";
 
@@ -11,13 +11,54 @@ export default class PetRepository implements InterfacePetRepository {
   criaPet(pet: PetEntity): void {
     this.repository.save(pet);
   }
-  listaPet(): Array<PetEntity> {
-    throw new Error("Method not implemented.");
+  async listaPet(): Promise<PetEntity[]> {
+    return await this.repository.find();
   }
-  atualizaPet(id: number, pet: PetEntity): void {
-    throw new Error("Method not implemented.");
+  async atualizaPet(
+    id: number,
+    newData: PetEntity
+  ): Promise<{ success: Boolean; message?: String }> {
+    try {
+      const petToUpdate = await this.repository.findOne({ where: { id } });
+
+      if (!petToUpdate) {
+        return { success: false, message: "Pet não encontrado!" };
+      }
+
+      Object.assign(petToUpdate, newData);
+
+      await this.repository.save(petToUpdate);
+
+      return { success: true };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        message: "Ocorreu um erro ao atualizar o Pet!",
+      };
+    }
   }
-  deletaPet(id: number, pet: PetEntity): void {
-    throw new Error("Method not implemented.");
-  }
+
+  async deletaPet(id: number): Promise<{ success: Boolean, message?: String }> {
+    try{
+      const petToRemove = await this.repository.findOne({ where: { id } })
+
+      if(!petToRemove){
+        return {
+          success: false,
+          message: "Pet não encontrado!"
+        }
+      }
+
+        await this.repository.remove(petToRemove)
+        return { success: true} 
+
+      } catch(error){
+          return {
+            success: false,
+            message: "Ocorreu um erro ao deletar o Pet!"
+          }
+      }
+
+}
 }
